@@ -9,6 +9,7 @@ program
   .version('0.0.1')
 	.usage('[option] [command]')
   .option('-i, --import <file>', 'import json file')
+	.option('-p, --print', 'print json content to stdout .')
 	.option('l, list [id]', "list")
 	.option('mv, move [id] [id]', "move")
 	.option('delete [id]', "delete")
@@ -39,6 +40,7 @@ if(program.list){
 	var ids = program.list == true ? [] :  program.list.split('/');
 	switch(ids.length){
 		case 0:
+			console.log('chapters:');
 			data.forEach(function(chapter){
 				console.log('%s %s', _id(chapter).green, chapter.name);
 			});
@@ -46,17 +48,32 @@ if(program.list){
 		case 1:
 			var chapter = findById({ chapters : data}, 'chapters', ids[0]);
 			if(chapter){
+				console.log('layers:');
 				chapter.layers.forEach(function(layer){
 					console.log('%s %s', _id(layer).green, layer.title);
 				});	
 			}else{
-				console.error('chapter %s not found .'.red, ids[0]);
+				var map = {
+					layer: 'lessons',
+					lesson: 'activities',
+					activity: 'problems'
+				};
+				var result = fuzzFinder(ids[0]);
+				var list = result.data[ map[result.type] ];
+				if(list){
+					console.log('%s:', map[ result.type ]);
+					list.forEach(function(item){
+						console.log('%s %s', _id(item).green, item.title || JSON.stringify(item));	
+					});
+				}else{
+					console.error('chapter %s was not found .'.red, ids[0]);
+				}
 			}
 			break;
 		case 2:
 			var chapter = findById({ chapters : data}, 'chapters', ids[0]);
 			var layer = findById(chapter,'layers', ids[1]);
-			console.log(layer);
+			console.log('lessons:');
 			layer.lessons.forEach(function(lesson){
 				console.log('%s %s', _id(lesson).green, lesson.title);
 			});
@@ -65,6 +82,7 @@ if(program.list){
 			var chapter = findById({ chapters : data}, 'chapters', ids[0]);
 			var layer = findById(chapter,'layers', ids[1]);
 			var lesson = findById(layer,'lessons', ids[2]);
+			console.log('activities:');
 			lesson.activities.forEach(function(activity){
 				console.log('%s %s', _id(activity).green, activity.title);
 			});			
@@ -74,6 +92,7 @@ if(program.list){
 			var layer = findById(chapter,'layers', ids[1]);
 			var lesson = findById(layer,'lessons', ids[2]);
 			var activity = findById(lesson, 'activities', ids[3]);
+			console.log('problems:');
 			activity.problems.forEach(function(problem){
 				console.log('%s %s', _id(problem).green, problem.body);
 			});
@@ -125,20 +144,27 @@ function getValueFromProp(obj, prop){
 if(program.move){
 	var id = program.move;	
 	var result = fuzzFinder(id);
-	console.log(result);
 	if(program.args == 0){
 		return console.error('must be specify dest id .'.red);
 	}
 	var dest_id = program.args[0];
 	var dest = fuzzFinder(dest_id);
+	if(!dest) return console.error('can not found %s .', dest_id.red);
 	if(result.type == 'problem' && dest.type == 'activity'){
-		//deleteItem(result);
+		result.data.parent_id = _id(dest.data);
 		dest.data.problems.push(result.data);
 		result.parent.splice(result.index, 1);
-		console.log( JSON.stringify(data) );
 	}else{
 		console.log("can not move %s to %s .".red, result.type, dest.type);
 	}
 }
 
-
+if(program.print){
+	console.log( JSON.stringify(data) );
+}
+ 
+fs.writeFile(program.import, JSON.stringify(data, null, 4), function(err) {
+    if(err) {
+      console.error('can not save json to file : %s'.red, err);
+    }
+}); 
