@@ -144,7 +144,10 @@ function getValueFromProp(obj, prop){
 if(program.move){
 	var id = program.move;	
 	var result = fuzzFinder(id);
-	if(program.args == 0){
+    if(!result){
+        return console.error('can not found %s .', id.red);
+    }
+	if(program.args.length == 0){
 		return console.error('must be specify dest id .'.red);
 	}
 	var dest_id = program.args[0];

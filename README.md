@@ -34,6 +34,9 @@ $ [sudo] npm install -g course-builder
 53f56f2f6dc0068a6f107f98 整式的乘法与因式分解
 5409b508c34d6dc35117f23e 分式
 ```
+```
+cat ~/Desktop/youlishu.txt | while read a b; do ./course-builder.js -i ~/Desktop/course.json mv $a $b; done
+```
 
 ### Contributing
 - Fork this repo
